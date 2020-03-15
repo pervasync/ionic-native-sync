@@ -1,0 +1,39 @@
+{
+  "name": "ionic-native-sync",
+  "version": "1.0.0",
+  "description": "Two way, incremental sync between Ionic Native SQLite database and MySQL, Oracle, MS SQL Server and PostgreSQL databases",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pervasync/ionic-native-sync.git"
+  },
+  "keywords": [
+    "Ionic Native",
+    "SQLite",
+    "DB Sync",
+    "Database",
+    "Synchronization",
+    "MySQL",
+    "Oracle",
+    "SQL Server",
+    "PostgreSQL"
+  ],
+  "author": "Pervasync",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pervasync/ionic-native-sync/issues"
+  },
+  "homepage": "https://github.com/pervasync/ionic-native-sync#readme",
+  "dependencies": {
+    "@angular/core": "^8.2.14",
+    "@ionic-native/core": "^5.20.0",
+    "@ionic-native/file": "^5.16.0",
+    "@ionic-native/http": "^5.20.0",
+    "@ionic-native/sqlite": "^5.16.0",
+    "rxjs": "^6.5.4"
+  },
+  "devDependencies": {}
+}
