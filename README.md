@@ -14,26 +14,26 @@ For end-to-end testing, you need to first setup a Pervasync server and publish y
 
 Create an Ionic app if you don't already have one. Change directory to app root.
 
-    ````
+    `
     ionic start ionic-native-sync-demo blank --type=angular
     cd ionic-native-sync-demo
-    ````
+    `
 
 Add the SQLite, file and HTTP cordova plugins.
 
-    ````
+    `
     ionic cordova plugin add cordova-plugin-file
     ionic cordova plugin add cordova-sqlite-storage
     ionic cordova plugin add cordova-plugin-advanced-http
-    ````
+    `
 
 Install this sync package together with SQLite, file npm packages
 
-    ````
+    `
     npm install --save ionic-native-sync
     npm install --save @ionic-native/file
     npm install  --save @ionic-native/sqlite
-    ````
+    `
 
 ## Usage
 
@@ -202,40 +202,42 @@ Install this sync package together with SQLite, file npm packages
 ### Android
 
 To test on Android, if your sync server is setup with plain HTTP instead of HTTPS, you will need to add your server to the domain list that have cleartextTrafficPermitted set to "true" by editing `<app root>/resources/android/xml/network_security_config.xml`. For example:
-    ```
+
+    `
     <network-security-config>
         <domain-config cleartextTrafficPermitted="true">
             <domain includeSubdomains="true">localhost</domain>
             <domain includeSubdomains="true">192.168.0.6</domain>        
         </domain-config>
     </network-security-config>
-    ```
+    `
 
 Build and install for Android
 
-    ```
+    `
     cd ionic-native-sync-demo
     ionic cordova build android
     adb install platforms/android/app/build/outputs/apk/debug/app-debug.apk
-    ```
+    `
+
 You could use [Android device file explorer](https://developer.android.com/studio/debug/device-file-explorer) to check the SQLite databases and folders synced.
 
 ### iOS
 
 Build and install for iOS
 
-    ```
+    `
     ionic cordova build ios
     ionic cordova emulate ios --livereload --consolelogs 
-    ```
+    `
 
 To find the simulator locations of the synced SQLite databases and file folders, 
 
-    ```
+    `
     cd ~/Library/Developer/CoreSimulator/Devices/ 
     find . -name pvcadmin__0.db
     ./6328A886-853F-40E0-BC65-A5FA1DFB1E03/data/Containers/Data/Application/57B0DD1F-E23B-47CC-8739-8920A5314320/Library/LocalDatabase/pvcadmin__0.db
-    ```
+    `
 
 The databases would be in `Library/LocalDatabase` and the sync folders would be in `Library/NoCloud`.
 
