@@ -344,10 +344,10 @@ let mssqlToSqlite = function (column, colType) {
         || "SMALLMONEY" == (colType)
         || "NUMERIC" == (colType)) { //
         colDef = colType;
-        if ("DECIMAL".equals(colType) || "NUMERIC".equals(colType)) {
+        if ("DECIMAL" == (colType) || "NUMERIC" == (colType)) {
             colDef += "(" + precision + "," + scale + ")";
         }
-        if ("MONEY".equals(colType)) {
+        if ("MONEY" == (colType)) {
             colDef = "DECIMAL" + "(" + precision + "," + scale + ")";
         }
     } else if ("DATE" == (colType) || "DATETIME" == (colType)
@@ -362,10 +362,10 @@ let mssqlToSqlite = function (column, colType) {
     } else if ("BINARY" == (colType) || "VARBINARY" == (colType)
         || "TIMESTAMP" == (colType) || "ROWVERSION" == (colType)) { // 
         colDef = colType;
-        if ("BINARY".equals(colType) || "VARBINARY".equals(colType)) {
+        if ("BINARY" == (colType) || "VARBINARY" == (colType)) {
             colDef += "(" + precision + ")";
         }
-        if ("TIMESTAMP".equals(colType) || "ROWVERSION".equals(colType)) {
+        if ("TIMESTAMP" == (colType) || "ROWVERSION" == (colType)) {
             colDef = "VARBINARY" + "(" + precision + ")";
         }
         defaultValue = null;
