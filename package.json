@@ -1,6 +1,6 @@
 {
   "name": "ionic-native-sync",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Two way, incremental sync between Ionic Native SQLite database and MySQL, Oracle, MS SQL Server and PostgreSQL databases",
   "main": "index.js",
   "scripts": {

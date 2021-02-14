@@ -196,6 +196,7 @@ let mysqlToSqlite = function (column, colType) {
                 defaultValue = null;
             }
         }*/
+        colDef = "BLOB"; // Too prevent strings from being stored as numbers
         defaultValue = null;
     } else {
         colDef = colType + "(" + precision + ")";
@@ -368,12 +369,14 @@ let mssqlToSqlite = function (column, colType) {
         if ("TIMESTAMP" == (colType) || "ROWVERSION" == (colType)) {
             colDef = "VARBINARY" + "(" + precision + ")";
         }
+        colDef = "BLOB"; // Too prevent strings from being stored as numbers
         defaultValue = null;
     } else if ("UNIQUEIDENTIFIER" == (colType)) {// uniqueidentifier
         colDef = "VARCHAR(72)";
         defaultValue = null;
     } else if ("SQL_VARIANT" == (colType) || "TABLE" == (colType) || "HIERARCHYID" == (colType)) {
         colDef = "VARBINARY(4000)";
+        colDef = "BLOB"; // Too prevent strings from being stored as numbers
         defaultValue = null;
     } else {
         colDef = colType;
@@ -424,6 +427,7 @@ let postgresqlToSqlite = function (column, colType) {
         colDef = "DECIMAL";
     } else if ("BIT" == (colType) || "BIT VARYING" == (colType)) { //
         colDef = "VARBINARY";
+        colDef = "BIT";
         defaultValue = null;
     } else if ("DATE" == (colType)
         || "TIME" == (colType) || "TIMESTAMP" == (colType)) {
@@ -432,7 +436,8 @@ let postgresqlToSqlite = function (column, colType) {
     } else if (colType.startsWith("INTERVAL")) { // 
         colDef = colType;
     } else if ("BYTEA" == (colType)) {
-        colDef = "VARBINARY";
+        //colDef = "VARBINARY";
+        colDef = "BLOB"; // Too prevent strings from being stored as numbers
         defaultValue = null;
     } else if ("TEXT" == (colType) || "XML" == (colType)) { // 
         colDef = "TEXT";

@@ -398,7 +398,7 @@ async function queryClientSchemasState() {
                 }
                 lobCols += columnName;
                 lobColsEqQs += columnName + "=?";
-                let emptyLob = "NULL";
+                let emptyLob = "''";
                 colQs += emptyLob;
                 colsEqQs += emptyLob;
                 syncTable.lobColCount = Number(syncTable.lobColCount) + 1;
