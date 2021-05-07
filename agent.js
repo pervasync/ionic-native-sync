@@ -755,7 +755,6 @@ async function checkInData() {
         if (!syncSchema.tableList) {
             syncSchema.tableList = [];
         }
-        syncSchema.selectedTableList = [];
         // Table iterator
         for (let n in syncSchema.tableList) {
             let syncTable = syncSchema.tableList[n];
@@ -770,8 +769,6 @@ async function checkInData() {
             }
             if (!syncTable.allowCheckIn && !isSuperUser) {
                 continue;
-            } else {
-                syncSchema.selectedTableList.push(syncTable);
             }
 
             let sqlUpdateM = "UPDATE " + context.settings.DQ + "main" +
@@ -787,137 +784,146 @@ async function checkInData() {
         cmd.value = clientSchemaSub;
         transport.writeCommand(cmd);
 
-        // checkin dml
-        let tableList;
-        //let dmlType = ["D", "I", "U"];
-
-        for (let iDml = 0; iDml < 3; iDml++) {
-
-            if (iDml >= 1) {
-                tableList = syncSchema.selectedTableList.reverse();
-            } else {
-                tableList = syncSchema.selectedTableList;
+        // Table iterator
+        let tableList = syncSchema.tableList;
+        let dmlType = null;//[] = { "U",   "I", "D"};
+        for (let dml1 = 1; dml1 >= 0; dml1--) {
+            if (dml1 == 0) {
+                tableList.reverse();
             }
 
-            for (let iTable in tableList) {
-                let syncTable = tableList[iTable];
+            for (let k = 0; k < tableList.length; k++) {
+                let syncTable = tableList[k];
 
-                let sqlQuery;
-                let dmlCmd;
+                for (let dml2 = 0; dml2 < dml1 + 1; dml2++) {
 
-                switch (iDml) {
-                    case 0:
-                        dmlCmd = "DELETE";
-                        break;
-                    case 1:
-                        dmlCmd = "INSERT";
-                        break;
-                    case 2:
-                        dmlCmd = "UPDATE";
-                        break;
-                }
-
-                let queryRs;
-                if (iDml == 0) { // delete
-                    sqlQuery = syncTable.sqlQueryD;
-                    context.log("syncTable.sqlQueryD: " + syncTable.sqlQueryD);
-                    queryRs = await schemaDb.executeSql(sqlQuery, [transactionId]);
-                } else if (iDml == 1) { // Insert
-                    sqlQuery = syncTable.sqlQueryI;
-                    context.log("syncTable.sqlQueryI: " + syncTable.sqlQueryI);
-                    queryRs = await schemaDb.executeSql(sqlQuery, ["I", transactionId]);
-                } else if (iDml == 2) { // update
-                    sqlQuery = syncTable.sqlQueryU;
-                    context.log("syncTable.sqlQueryU: " + syncTable.sqlQueryU);
-                    queryRs = await schemaDb.executeSql(sqlQuery, ["U", transactionId]);
-                }
-
-                if (queryRs.rows.length > 0) {
-                    let count = 0;
-                    cmd = {};
-                    cmd.name = dmlCmd;
-                    cmd.value = syncTable.id;
-                    transport.writeCommand(cmd);
-                    for (let i = 0; i < queryRs.rows.length; i++) {
-                        // Each row is a standard JavaScript array indexed by
-                        // column names.
-                        let row = queryRs.rows.item(i);
-                        //context.log("row=" + JSON.stringify(row));
-                        let pkVals = [];
-                        count++;
-                        if (iDml == 0) {
-                            syncSummary.checkInDIU_requested[0] += 1;
-                        } else if (iDml == 1) {
-                            syncSummary.checkInDIU_requested[1] += 1;
-                        } else {
-                            syncSummary.checkInDIU_requested[2] += 1;
-                        }
-                        cmd.name = "ROW";
-                        let colValList = [];
-                        //let splitted;
-                        if (iDml == 0) { // delete
-                            colValList.push(String(row['VERSION$$'])); // version col
-                            for (let m = 0; m < syncTable.pkList.length; m++) {
-                                let obj = null;
-                                obj = row[syncTable.columnsPkRegLob[m].columnName];
-                                if (obj != null) {
-                                    colValList.push(String(obj)); // cast to String
-                                } else {
-                                    colValList.push(null);
-                                }
-                            }
-                        } else { // insert or update
-                            colValList.push(String(row['VERSION$$'])); // version col
-                            for (let m = 0; m < syncTable.columnsPkRegLob.length - syncTable.lobColCount; m++) {
-                                let column = syncTable.columnsPkRegLob[m];
-                                let obj = null;
-                                obj = row[column.columnName];
-                                //context.log("column.columnName=" + column.columnName);
-                                //context.log("obj=" + obj);
-                                if (obj != null) {
-                                    colValList.push(String(obj)); // cast to String
-                                } else {
-                                    colValList.push(null);
-                                }
-                                if (m < syncTable.pkList.length) {
-                                    pkVals.push(obj);
-                                }
-                            }
-                        }
-                        cmd = {};
-                        cmd.name = "ROW";
-                        cmd.value = colValList;
-                        transport.writeCommand(cmd);
-
-                        // lob payloads
-                        //context.log("syncTable.lobColCount=" + syncTable.lobColCount);
-                        if ((iDml == 1 || iDml == 2) && syncTable.lobColCount > 0) { // insert/update and there are  lob cols
-                            for (let m = 0; m < syncTable.lobColCount; m++) {
-                                let column =
-                                    syncTable.columnsPkRegLob[m + syncTable.columnsPkRegLob.length - syncTable.lobColCount];
-                                let isBinary = (db.isBlob(syncSchema.serverDbType, column));
-                                let payload = row[column.columnName];
-                                //context.log("lob payload column.columnName=" + column.columnName + ", payload=" + payload);
-                                //context.log("lob payload isBinary=" + isBinary);
-                                await sendLob(payload, isBinary);
-                            }
-                        }
+                    if (dml1 == 0) {
+                        dmlType = "D";
+                    } else if (dml2 == 0) {
+                        dmlType = "U";
+                    } else if (dml2 == 1) {
+                        dmlType = "I";
                     }
 
-                    // TABLE DML (INSERT UPDATE DELETE) "END"
-                    let end_cmd =
-                        "END_" + dmlCmd;
-                    cmd = {};
-                    cmd.name = end_cmd;
-                    cmd.value = null;
-                    transport.writeCommand(cmd);
+                    console.log("dmlType=" + dmlType + ", syncTable.name=" + syncTable.name);
 
-                    context.log(syncTable.name + ", " + dmlCmd + ", " +
-                        count);
+                    let sqlQuery;
+                    let dmlCmd = null;
+                    switch (dmlType) {
+                        case "D":
+                            dmlCmd = "DELETE";
+                            break;
+                        case "I":
+                            dmlCmd = "INSERT";
+                            break;
+                        case "U":
+                            dmlCmd = "UPDATE";
+                            break;
+                    }
+
+                    let queryRs;
+                    if (dmlType == "D") { // delete
+                        sqlQuery = syncTable.sqlQueryD;
+                        context.log("syncTable.sqlQueryD: " + syncTable.sqlQueryD);
+                        queryRs = await schemaDb.executeSql(sqlQuery, [transactionId]);
+                    } else if (dmlType == "I") { // Insert
+                        sqlQuery = syncTable.sqlQueryI;
+                        context.log("syncTable.sqlQueryI: " + syncTable.sqlQueryI);
+                        queryRs = await schemaDb.executeSql(sqlQuery, ["I", transactionId]);
+                    } else if (dmlType == "U") { // update
+                        sqlQuery = syncTable.sqlQueryU;
+                        context.log("syncTable.sqlQueryU: " + syncTable.sqlQueryU);
+                        queryRs = await schemaDb.executeSql(sqlQuery, ["U", transactionId]);
+                    }
+
+                    if (queryRs.rows.length > 0) {
+                        let count = 0;
+                        cmd = {};
+                        cmd.name = dmlCmd;
+                        cmd.value = syncTable.id;
+                        transport.writeCommand(cmd);
+                        for (let i = 0; i < queryRs.rows.length; i++) {
+                            // Each row is a standard JavaScript array indexed by
+                            // column names.
+                            let row = queryRs.rows.item(i);
+                            //context.log("row=" + JSON.stringify(row));
+                            let pkVals = [];
+                            count++;
+                            if (dmlType == "D") {
+                                syncSummary.checkInDIU_requested[0] += 1;
+                            } else if (dmlType == "I") {
+                                syncSummary.checkInDIU_requested[1] += 1;
+                            } else {
+                                syncSummary.checkInDIU_requested[2] += 1;
+                            }
+                            cmd.name = "ROW";
+                            let colValList = [];
+                            //let splitted;
+                            if (dmlType == "D") { // delete
+                                colValList.push(String(row['VERSION$$'])); // version col
+                                for (let m = 0; m < syncTable.pkList.length; m++) {
+                                    let obj = null;
+                                    obj = row[syncTable.columnsPkRegLob[m].columnName];
+                                    if (obj != null) {
+                                        colValList.push(String(obj)); // cast to String
+                                    } else {
+                                        colValList.push(null);
+                                    }
+                                }
+                            } else { // insert or update
+                                colValList.push(String(row['VERSION$$'])); // version col
+                                for (let m = 0; m < syncTable.columnsPkRegLob.length - syncTable.lobColCount; m++) {
+                                    let column = syncTable.columnsPkRegLob[m];
+                                    let obj = null;
+                                    obj = row[column.columnName];
+                                    //context.log("column.columnName=" + column.columnName);
+                                    //context.log("obj=" + obj);
+                                    if (obj != null) {
+                                        colValList.push(String(obj)); // cast to String
+                                    } else {
+                                        colValList.push(null);
+                                    }
+                                    if (m < syncTable.pkList.length) {
+                                        pkVals.push(obj);
+                                    }
+                                }
+                            }
+                            cmd = {};
+                            cmd.name = "ROW";
+                            cmd.value = colValList;
+                            transport.writeCommand(cmd);
+
+                            // lob payloads
+                            //context.log("syncTable.lobColCount=" + syncTable.lobColCount);
+                            if ((dmlType == "I" || dmlType == "U") && syncTable.lobColCount > 0) { // insert/update and there are  lob cols
+                                for (let m = 0; m < syncTable.lobColCount; m++) {
+                                    let column =
+                                        syncTable.columnsPkRegLob[m + syncTable.columnsPkRegLob.length - syncTable.lobColCount];
+                                    let isBinary = (db.isBlob(syncSchema.serverDbType, column));
+                                    let payload = row[column.columnName];
+                                    //context.log("lob payload column.columnName=" + column.columnName + ", payload=" + payload);
+                                    //context.log("lob payload isBinary=" + isBinary);
+                                    await sendLob(payload, isBinary);
+                                }
+                            }
+                        }
+
+                        // TABLE DML (INSERT UPDATE DELETE) "END"
+                        let end_cmd =
+                            "END_" + dmlCmd;
+                        cmd = {};
+                        cmd.name = end_cmd;
+                        cmd.value = null;
+                        transport.writeCommand(cmd);
+
+                        context.log(syncTable.name + ", " + dmlCmd + ", " +
+                            count);
+                    }
                 }
             }
-
         }
+        tableList.reverse();
+
         // END_SCHEMA
         cmd = {};
         cmd.name = "END_SCHEMA";
